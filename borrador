@@ -1,0 +1,126 @@
+<?php
+
+
+require_once 'conexion/conexion.php';
+require_once 'respuestas.class.php';
+
+
+//hereda los metodos de la clase conexion
+class auth extends conexion {
+
+public function login($json){
+
+    $_respustas = new respuestas;
+    $datos= json_decode($json, true);
+    if (!isset($datos['usuario']) || !isset($datos["password"])) {
+        // error  con los campos
+        return $_respustas->error_400();
+    }else{
+        $usuario =$datos['usuario'];
+        $password =$datos['password'];
+        $password = parent::encriptar($password); //encriptacion de l contraseña
+        $datos= $this->obtenerDatosUsuario($usuario);
+        if ($datos) {
+            // verificar la contraseña correcta
+            if ($password == $datos[0]['Password']) {
+                if($datos[0]['Estado']=="Activo"){
+
+                    $verificar = $this->insertarToken($datos[0]['UsuarioId']);
+
+                    if($verificar){
+                        // se guarda
+                        $result = $_respustas->response;
+                        $result["result"] = array(
+                            "token" => $verificar
+                        );
+                        return $result;
+                    }else{
+                        // error al guardar
+                        return $_respustas->error_500("Error interno, No se ha podido guardar");
+                    }
+                // se genera el token
+                }else{
+                    return $_respustas->error_200("Usuario esta Inactivo");
+                }
+
+            }else{
+                //contraseña no es correcta
+                return $_respustas->error_200("El Password incorrecto");
+            }
+        }else{
+            return $_respustas->error_200("El usuario  $usuario no existe");
+        }
+    }
+}
+
+private function obtenerDatosUsuario ($correo){
+    $query ="SELECT usuarioId, Password,Estado FROM usuarios WHERE Usuario = '$correo'";
+    $datos = parent::obtenerDatos($query);
+    if (isset($datos[0]["usuarioId"])) {
+        return $datos;
+    }else{
+        return 0;
+    }
+
+}
+
+
+// token
+private function insertarToken($usuarioId){
+    $val = true;
+    $token = bin2hex(openssl_random_pseudo_bytes(16, $val));
+    $date = date("Y-m-a H:i");
+    $estado ="Activo";
+    $query ="INSERT INTO usuarios_token (UsuarioId, Token, Estado, Fecha)VALUES('$usuarioId','$token','$estado','$date')";
+    $verifica = parent::nomQuery($query);
+    if ($verifica){
+        return $token;
+    }else{
+        return 0;
+    }
+
+}
+
+}
+
+?>
+
+
+
+<?php 
+require_once 'clases/auth.class.php';
+require_once 'clases/respuestas.class.php';
+
+$_auth = new auth;
+$_respuestas = new respuestas;
+
+
+
+if($_SERVER['REQUEST_METHOD'] == "POST"){
+
+    //recibir datos
+    $postBody = file_get_contents("php://input");
+
+    //enviamos los datos al manejador
+    $datosArray = $_auth->login($postBody);
+
+    //delvolvemos una respuesta
+    header('Content-Type: application/json');
+    if(isset($datosArray["result"]["error_id"])){
+        $responseCode = $datosArray["result"]["error_id"];
+        http_response_code($responseCode);
+    }else{
+        http_response_code(200);
+    }
+    echo json_encode($datosArray);
+
+
+}else{
+    header('Content-Type: application/json');
+    $datosArray = $_respuestas->error_405();
+    echo json_encode($datosArray);
+
+}
+
+
+?>

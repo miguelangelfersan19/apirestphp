@@ -51,20 +51,23 @@ class conexion{
 
 //obtener registros de la base de datos
 
+
+
 public function obtenerDatos($sqlstr){
     $results = $this->conexion->query($sqlstr);
     $resultArray = array();
-    foreach ($result as $key){
-        $resultArray[]=$key;
+      foreach ($results as $key) {
+        $resultArray[] = $key;
     }
-   return $this->convertirUTF8($resultArray);
+    return $this->convertirUTF8($resultArray);
+
 }
 
 //nos devuelve las filas afectadas por el insert
 public function nomQuery($sqlstr){
     $results = $this->conexion->query($sqlstr);
     return $this->conexion->affected_rows;
-  
+
 }
 
 //insertar nos devulve el ultimo id
@@ -78,6 +81,11 @@ public function nomQueryId($sqlstr){
     }
 }
 
+// encriptar la contraseña
+
+protected function encriptar($string){
+return md5($string);
+}
 
 
 
