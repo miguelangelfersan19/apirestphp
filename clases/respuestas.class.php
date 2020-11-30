@@ -42,6 +42,16 @@ class respuestas
         return $this->response;
     }
 
+    public function error_401($valor ="No autorizado, Token invalido"){
+        $this->response['status']="error";
+        $this->response['result']=array(
+            "error_id" =>"401",
+            "error_msg" => $valor
+
+        );
+        return $this->response;
+    }
+
     public function error_500($valor ="Error interno del servidor"){
         $this->response['status']="error";
         $this->response['result']=array(
@@ -51,6 +61,11 @@ class respuestas
         );
         return $this->response;
     }
+
+
+   
+
+
 }
 
 

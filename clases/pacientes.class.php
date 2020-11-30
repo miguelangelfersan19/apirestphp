@@ -14,6 +14,9 @@ class pacientes extends conexion{
     private $telefono  = "";
     private $fechaNacimiento  = "0000-00-00";
     private $correo = ""; 
+    private $token = "";
+
+    // token generado 59085b232d70267e5c0ece0de34606eb
 
 
 
@@ -28,16 +31,33 @@ class pacientes extends conexion{
         $query = "SELECT PacienteId, Nombre, DNI, Telefono, Correo FROM " .$this->table." limit $inicio,$cantidad";
         $datos = parent::obtenerDatos($query);   
         return ($datos);
-    }
+     }
 
-    public function obtenerPaciente($id){
-        $query = "SELECT * FROM " . $this->table . " WHERE pacienteId = '$id'";
-        return parent::obtenerDatos($query); 
-    }
+         public function obtenerPaciente($id){
+          $query = "SELECT * FROM " . $this->table . " WHERE pacienteId = '$id'";
+           return parent::obtenerDatos($query); 
+         }
 
-    public function post($json){
+
+     public function post($json){
         $_respuestas = new respuestas;
         $datos = json_decode($json, true);
+        // pedir el token 
+        if (!isset($datos['token'])) {
+            return $_respuestas->error_401();
+        }else {
+            $this->token = $datos['token'];
+            $arrayToken = $this-> buscarToken(); //obtiene los datos de la base de datos
+            if($arrayToken){
+
+            }else{
+                return $_respuestas->error_401("El token que se envio a caducado! ");
+            }
+        }
+
+
+
+/*
         if(!isset($datos['nombre']) || !isset($datos['dni']) || !isset($datos['correo'])){
             return $_respuestas->error_400();
         }else {
@@ -61,7 +81,7 @@ class pacientes extends conexion{
             }else{
                 return $_respuestas->error_500();
             }
-        }
+        }*/
 
     }
 
@@ -159,6 +179,24 @@ class pacientes extends conexion{
             return 0;
         }
 
+    }
+
+    private function buscarToken(){
+      $query = " SELECT TokenId,UsuarioIdo,Estado from usuarios_token WHERE Token ='" . $this->token . "' AND Estado = 'Activo'";
+      $resp = parent::obtenerDatos($query);
+      if($resp){
+          return $resp;
+        }else{
+            return 0;}
+    }
+
+    private function actualizarToken($tokenid){
+        $date = date ("Y-m-d H:i");
+        $query = "UPDATE usuarios_token SET Fecha = '$date' WHERE TokenId = '$tokenid' '";
+        $resp = parent::nomQuery($query);
+        if ($resp >= 1) {
+            return $resp;
+        }else{ return 0;}
     }
 
 
