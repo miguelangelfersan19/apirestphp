@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] == "GET") {
      } else if ($_SERVER['REQUEST_METHOD'] == "POST"){
       // se reciben los datos enviados
          $postBody = file_get_contents("php://input"); // se envian los datos al manejador
-         $resp = $_pacientes->post($postBody);
+         $datosArray = $_pacientes->post($postBody);
          
 
           header('Content-Type: application/json');

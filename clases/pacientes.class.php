@@ -34,7 +34,7 @@ class pacientes extends conexion{
      }
 
          public function obtenerPaciente($id){
-          $query = "SELECT * FROM " . $this->table . " WHERE pacienteId = '$id'";
+          $query = "SELECT * FROM " . $this->table . " WHERE PacienteId = '$id'";
            return parent::obtenerDatos($query); 
          }
 
@@ -47,41 +47,39 @@ class pacientes extends conexion{
             return $_respuestas->error_401();
         }else {
             $this->token = $datos['token'];
-            $arrayToken = $this-> buscarToken(); //obtiene los datos de la base de datos
+            $arrayToken = $this->buscarToken(); //obtiene los datos de la base de datos
             if($arrayToken){
+
+                if(!isset($datos['nombre']) || !isset($datos['dni']) || !isset($datos['correo'])){
+                    return $_respuestas->error_400();
+                }else {
+                    $this->nombre = $datos['nombre'];
+                    $this->dni = $datos['dni'];
+                    $this->correo = $datos['correo'];
+                    //validacion de datos solicitados
+                    if(isset($datos['telefono'])){$this->telfono = $datos['telefono'];}
+                    if(isset($datos['direccion'])){$this->direccion = $datos['direccion'];}
+                    if(isset($datos['codigoPostal'])){$this->codigoPostal = $datos['codigoPostal'];}
+                    if(isset($datos['genero'])){$this->genero = $datos['genero'];}
+                    if(isset($datos['fechaNacimiento'])) { $this->fechaNacimiento = $datos['fechaNacimiento']; }
+                    $resp= $this->insertarPaciente();
+        
+                    if($resp){
+                        $respuesta = $_respuestas->response;
+                        $respuesta["result"] = array(
+                            "pacienteId" => $resp
+                        );
+                        return $respuesta;
+                    }else{
+                        return $_respuestas->error_500();
+                    }
+                }
 
             }else{
                 return $_respuestas->error_401("El token que se envio a caducado! ");
             }
         }
 
-
-
-/*
-        if(!isset($datos['nombre']) || !isset($datos['dni']) || !isset($datos['correo'])){
-            return $_respuestas->error_400();
-        }else {
-            $this->nombre = $datos['nombre'];
-            $this->dni = $datos['dni'];
-            $this->correo = $datos['correo'];
-            //validacion de datos solicitados
-            if(isset($datos['telefono'])){$this->telfono = $datos['telefono'];}
-            if(isset($datos['direccion'])){$this->direccion = $datos['direccion'];}
-            if(isset($datos['codigoPostal'])){$this->codigoPostal = $datos['codigoPostal'];}
-            if(isset($datos['genero'])){$this->genero = $datos['genero'];}
-            if(isset($datos['fechaNacimiento'])){$this->fechaNacimiento = $datos['fechaNacimiento'];}
-            $resp= $this->insertarPaciente();
-
-            if($resp){
-                $respuesta = $_respuestas->response;
-                $respuesta["result"] = array(
-                    "pacienteId" => $resp
-                );
-                return $respuesta;
-            }else{
-                return $_respuestas->error_500();
-            }
-        }*/
 
     }
 
@@ -91,15 +89,32 @@ class pacientes extends conexion{
         values
         ('" . $this->dni . "','" . $this->nombre . "','" . $this->direccion ."','" . $this->codigoPostal . "','"  . $this->telefono . "','" . $this->genero . "','" . $this->fechaNacimiento . "','" . $this->correo . "')"; 
         $resp = parent::nomQueryId($query);
-        print_r( $query);
+        if ($resp){
+            return $resp;
+        }else{
+            return 0;
+        }
     }
+
+
+
+
 
     public function put($json){
         $_respuestas = new respuestas;
         $datos = json_decode($json, true);
-        if(!isset($datos['pacienteId']) ){
-            return $_respuestas->error_400();
+        //validacion de tokens
+        if (!isset($datos['token'])) {
+            return $_respuestas->error_401();
         }else {
+            $this->token = $datos['token'];
+            $arrayToken = $this-> buscarToken(); //obtiene los datos de la base de datos
+            if($arrayToken){
+                if(!isset($datos['pacienteId']) ){
+                    return $_respuestas->error_400();
+
+            }else{
+                
             $this->pacienteid = $datos['pacienteId'];
             if(isset($datos['nombre'])){$this->nombre= $datos['nombre'];}
             if(isset($datos['dni'])){$this->dni = $datos['dni'];}
@@ -114,7 +129,7 @@ class pacientes extends conexion{
             if($resp){
                 $respuesta = $_respuestas->response;
                 $respuesta["result"] = array(
-                    "pacienteId" => $resp
+                    "pacienteId" => $this->pacienteid
                 );
                 return $respuesta;
             }else{
@@ -122,7 +137,10 @@ class pacientes extends conexion{
             }
         }
 
-        
+            }else{
+        return $_respuestas->error_401(" El token que envio es invalido o ja caducado! ");
+       }
+      } 
     }
 
 
@@ -148,25 +166,36 @@ class pacientes extends conexion{
 
         $_respuestas = new respuestas;
         $datos = json_decode($json, true);
-        if(!isset($datos['pacienteId']) ){
-            return $_respuestas->error_400();
-        }else {
-            $this->pacienteid = $datos['pacienteId'];
-            
-            $resp= $this->eliminarPaciente();
 
-            if($resp){
-                $respuesta = $_respuestas->response;
-                $respuesta["result"] = array(
-                    "pacienteId" => $resp
-                );
-                return $respuesta;
+        //validacio  de token
+        if (!isset($datos['token'])) {
+            return $_respuestas->error_401();
+        }else {
+            $this->token = $datos['token'];
+            $arrayToken = $this-> buscarToken(); //obtiene los datos de la base de datos
+            if($arrayToken){
+
+                if(!isset($datos['pacienteId']) ){
+                    return $_respuestas->error_400();
+                }else {
+                    $this->pacienteid = $datos['pacienteId'];
+                    
+                    $resp= $this->eliminarPaciente();
+                    if($resp){
+                        $respuesta = $_respuestas->response;
+                        $respuesta["result"] = array(
+                            "pacienteId" => $resp
+                        );
+                        return $respuesta;
+                    }else{
+                        return $_respuestas->error_500();
+                    }
+                }
+    
             }else{
-                return $_respuestas->error_500();
+                return $_respuestas->error_401("El token que se envio a caducado! ");
             }
         }
-
-
 
     }
 
@@ -196,11 +225,10 @@ class pacientes extends conexion{
         $resp = parent::nomQuery($query);
         if ($resp >= 1) {
             return $resp;
-        }else{ return 0;}
+        }else{
+             return 0;
+            }
     }
-
-
-
 
 
 }
